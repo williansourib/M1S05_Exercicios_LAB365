@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Preços e Compra</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+
+    #container {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+        text-align: center;
+    }
+
+    input[type="text"], button {
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    #products {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .product {
+        width: calc(33.33% - 10px);
+        margin-bottom: 20px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .product span {
+        font-weight: bold;
+    }
+
+    #cart {
+        margin-top: 30px;
+        border-top: 1px solid #ddd;
+        padding-top: 20px;
+    }
+
+    #cartItems {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    #cartItems li {
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+
+<input type="text" id="productInput" placeholder="Digite o código ou nome do produto">
+<button onclick="consultPrice()">Consultar Valor</button>
+<button onclick="buy()">Comprar Produto Consultado</button>
+<button onclick="calculateTotal()">Calcular Total do Carrinho</button>
+
+<div id="products">
+    <div class="product" id="product1" style="display: none;">
+        <span> arroz - R$10</span>
+        <button onclick="addProduct({ nome: 'arroz', preco: 10 })">Adicionar ao Carrinho</button>
+    </div>
+    <div class="product" id="product2" style="display: none;">
+        <span> feijão - R$6</span>
+        <button onclick="addProduct({ nome: 'feijão ', preco: 20 })">Adicionar ao Carrinho</button>
+    </div>
+    <div class="product" id="product3" style="display: none;">
+        <span> café - R$5</span>
+        <button onclick="addProduct({ nome: 'café', preco: 30 })">Adicionar ao Carrinho</button>
+    </div>
+</div>
+
+<h2>Carrinho</h2>
+<div id="cart">
+    <p>Nenhum item no carrinho</p>
+    <ul id="cartItems"></ul>
+    <p>Total: R$<span id="total">0</span></p>
+    <p id="dynamicTotal">Valor total do carrinho: R$0.00</p>
+    <p id="cartSize">Número de produtos no carrinho: 0</p>
+    <button onclick="checkout()">Finalizar Compra</button>
+</div>
+
+<script>
+    let cartTotal = 0;
+    let cartItems = [];
+
+    // Função para ler os produtos do localStorage e atualizar a tela
+    function updateFromLocalStorage() {
+        let storedItems = JSON.parse(localStorage.getItem('cartItems'));
+        if (storedItems) {
+            cartItems = storedItems;
+            cartItems.forEach(function(item) {
+                cartTotal += item.preco;
+            });
+            updateCartItems();
+            updateCartTotal();
+        }
+    }
+
+    // Chamada inicial para atualizar a partir do localStorage
+    updateFromLocalStorage();
+
+    function addProduct(product) {
+        cartTotal += product.preco;
+        cartItems.push(product);
+        localStorage.setItem('cartItems', JSON.stringify(cartItems));
+        updateCartItems();
+        updateCartTotal();
+    }
+
+    function updateCartItems() {
+        let cartItemsList = document.getElementById('cartItems');
+        cartItemsList.innerHTML = '';
+        cartItems.forEach(function(item) {
+            let li = document.createElement('li');
+            li.textContent = item.nome + ' - R$' + item.preco.toFixed(2);
+            cartItemsList.appendChild(li);
+        });
+    }
+
+    function updateCartTotal() {
+        document.getElementById('total').textContent = cartTotal.toFixed(2);
+        document.getElementById('dynamicTotal').textContent = 'Valor total do carrinho: R$' + cartTotal.toFixed(2);
+        document.getElementById('cartSize').textContent = 'Número de produtos no carrinho: ' + cartItems.length;
+    }
+
+    function consultPrice() {
+        let input = document.getElementById('productInput').value.toLowerCase();
+        let found = false;
+        document.querySelectorAll('.product').forEach(function(el) {
+            if (el.textContent.toLowerCase().includes(input)) {
+                let productPrice = parseFloat(el.textContent.match(/\d+/));
+                alert('O valor do produto é: R$' + productPrice.toFixed(2));
+                found = true;
+            }
+        });
+        if (!found) {
+            alert('Produto não encontrado.');
+        }
+    }
+
+    function buy() {
+        let input = document.getElementById('productInput').value.toLowerCase();
+        let found = false;
+        document.querySelectorAll('.product').forEach(function(el) {
+            if (el.textContent.toLowerCase().includes(input)) {
+                let productName = el.textContent.split(" - ")[0];
+                let productPrice = parseFloat(el.textContent.match(/\d+/));
+                addProduct({ nome: productName, preco: productPrice });
+                found = true;
+            }
+        });
+        if (!found) {
+            alert('Produto não encontrado.');
+        }
+    }
+
+    function checkout() {
+        if (cartTotal === 0) {
+            alert('Adicione produtos ao carrinho antes de finalizar a compra.');
+        } else {
+            alert('Compra finalizada! Total: R$' + cartTotal.toFixed(2));
+            cartTotal = 0;
+            cartItems = [];
+            localStorage.removeItem('cartItems');
+            updateCartItems();
+            updateCartTotal();
+        }
+    }
+
+    function calculateTotal() {
+        let soma = 0;
+        cartItems.forEach(function(item) {
+            soma += item.preco;
+        });
+        if (soma === 0) {
+            alert('Carrinho vazio');
+        } else {
+            alert('O valor total do carrinho é: R$' + soma.toFixed(2));
+        }
+    }
+</script>
+
+</body>
+</html>
